@@ -1,0 +1,8 @@
+{
+    "private": true,
+    "name": "fileoustore",
+    "description": "Laravel API for file storage with SleekDB",
+    "scripts": {
+        "start": "php artisan serve"
+    }
+}
