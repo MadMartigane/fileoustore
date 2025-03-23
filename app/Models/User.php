@@ -5,14 +5,22 @@ declare(strict_types=1);
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
-use App\Services\FileStore;
+use App\Traits\CamelCaseAttributes;
 
 class User extends Authenticatable
 {
-    use HasApiTokens, HasFactory, Notifiable;
+    use HasApiTokens, HasFactory, Notifiable, CamelCaseAttributes;
+    
+    /**
+     * The table associated with the model.
+     *
+     * @var string
+     */
+    protected $table = 'users';
     
     /**
      * The primary key for the model.
@@ -41,6 +49,7 @@ class User extends Authenticatable
      * @var array<int, string>
      */
     protected $fillable = [
+        'id',
         'name',
         'email',
         'password',
@@ -69,6 +78,20 @@ class User extends Authenticatable
     ];
 
     /**
+     * Boot function to set ID if not provided
+     */
+    protected static function boot()
+    {
+        parent::boot();
+        
+        static::creating(function ($model) {
+            if (!$model->id) {
+                $model->id = 'user_' . uniqid();
+            }
+        });
+    }
+
+    /**
      * Check if the user is an admin.
      *
      * @return bool
@@ -81,12 +104,11 @@ class User extends Authenticatable
     /**
      * Get the files owned by the user.
      *
-     * @return array
+     * @return \Illuminate\Database\Eloquent\Relations\HasMany
      */
-    public function files(): array
+    public function files(): HasMany
     {
-        $fileStore = new FileStore();
-        return $fileStore->getFilesByOwner($this->id);
+        return $this->hasMany(File::class, 'owner_id');
     }
 
     /**
@@ -94,9 +116,18 @@ class User extends Authenticatable
      *
      * @return array
      */
-    public function sharedFiles(): array
+    public function sharedFiles()
     {
-        $fileStore = new FileStore();
-        return $fileStore->getSharedFiles($this->id);
+        return File::where('shared_with', 'LIKE', '%"' . $this->id . '"%')->get();
+    }
+    
+    /**
+     * Convert the user data to a camelCase array for API responses.
+     *
+     * @return array
+     */
+    public function toApiResponse(): array
+    {
+        return $this->snakeToCamel($this->toArray());
     }
 }

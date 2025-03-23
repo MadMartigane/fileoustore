@@ -4,8 +4,9 @@ declare(strict_types=1);
 
 namespace Database\Seeders;
 
-use FileouStore\Services\UserService;
+use App\Models\User;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\Hash;
 
 class DatabaseSeeder extends Seeder
 {
@@ -14,17 +15,15 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        // Create admin user using SleekDB
-        $userService = new UserService();
-
-        // Check if admin already exists
-        $existingAdmin = $userService->findByEmail('admin@example.com');
+        // Create admin user using Eloquent
+        $existingAdmin = User::where('email', 'admin@example.com')->first();
 
         if (!$existingAdmin) {
-            $userService->create([
+            User::create([
+                'id' => 'user_admin_' . uniqid(),
                 'name' => 'Admin User',
                 'email' => 'admin@example.com',
-                'password' => 'password', // Change this in production!
+                'password' => Hash::make('password'), // Change this in production!
                 'is_admin' => true,
             ]);
 
@@ -34,4 +33,3 @@ class DatabaseSeeder extends Seeder
         }
     }
 }
-

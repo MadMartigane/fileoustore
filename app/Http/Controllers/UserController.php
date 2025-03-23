@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Controllers;
 
 use App\Services\UserService;
+use App\Traits\CamelCaseAttributes;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
@@ -12,6 +13,8 @@ use Illuminate\Validation\Rules;
 
 class UserController extends Controller
 {
+    use CamelCaseAttributes;
+    
     private UserService $userService;
 
     public function __construct(UserService $userService)
@@ -28,8 +31,29 @@ class UserController extends Controller
      */
     public function index(): JsonResponse
     {
-        $users = $this->userService->all();
-        return response()->json(['users' => $users]);
+        try {
+            \Log::info('UserController@index called', [
+                'auth_user' => auth()->user() ? auth()->user()->id : 'Not authenticated',
+                'all_users_count' => count($this->userService->all())
+            ]);
+            
+            $users = $this->userService->all();
+            $camelCaseUsers = $users->map(function ($user) {
+                return $user->toApiResponse();
+            });
+            return response()->json(['users' => $camelCaseUsers]);
+        } catch (\Exception $e) {
+            \Log::error('UserController@index error', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            
+            return response()->json([
+                'error' => 'Internal Server Error',
+                'message' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ], 500);
+        }
     }
 
     /**
@@ -58,7 +82,7 @@ class UserController extends Controller
             'is_admin' => $request->is_admin ?? false,
         ]);
 
-        return response()->json(['user' => $user], 201);
+        return response()->json(['user' => $user->toApiResponse()], 201);
     }
 
     /**
@@ -81,7 +105,7 @@ class UserController extends Controller
             return response()->json(['message' => 'User not found'], 404);
         }
 
-        return response()->json(['user' => $user]);
+        return response()->json(['user' => $user->toApiResponse()]);
     }
 
     /**
@@ -120,7 +144,7 @@ class UserController extends Controller
             return response()->json(['message' => 'User not found'], 404);
         }
 
-        return response()->json(['user' => $user]);
+        return response()->json(['user' => $user->toApiResponse()]);
     }
 
     /**

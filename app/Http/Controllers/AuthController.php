@@ -4,14 +4,19 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers;
 
+use App\Models\User;
 use App\Services\UserService;
+use App\Traits\CamelCaseAttributes;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rules;
 
 class AuthController extends Controller
 {
+    use CamelCaseAttributes;
+
     private UserService $userService;
 
     public function __construct(UserService $userService)
@@ -44,7 +49,7 @@ class AuthController extends Controller
             'is_admin' => false, // Default to regular user
         ]);
 
-        return response()->json(['user' => $user], 201);
+        return response()->json(['user' => $user->toApiResponse()], 201);
     }
 
     /**
@@ -68,30 +73,25 @@ class AuthController extends Controller
         }
 
         try {
-            $user = $this->userService->verifyCredentials($request->email, $request->password);
-
-            if (!$user) {
+            if (!Auth::attempt($request->only('email', 'password'))) {
                 \Log::warning('Invalid credentials');
                 return response()->json(['message' => 'Invalid credentials'], 401);
             }
 
-            \Log::info('User authenticated', ['user_id' => $user['id']]);
+            $user = User::where('email', $request->email)->first();
+            \Log::info('User authenticated', ['user_id' => $user->id]);
+
+            // Create token for API authentication
+            $token = $user->createToken('api-token')->plainTextToken;
+
+            return response()->json([
+                'user' => $user->toApiResponse(),
+                'token' => $token,
+            ]);
         } catch (\Exception $e) {
             \Log::error('Authentication error', ['exception' => $e->getMessage()]);
-            return response()->json(['message' => 'Authentication error', 'debug' => $e->getMessage()], 500);
+            return response()->json(['message' => 'Authentication error', 'debugTrace' => $e->getMessage()], 500);
         }
-
-        // Create token for API authentication
-        // Convert array to User model
-        $userModel = $this->userService->createUserModel($user);
-
-        // Create token
-        $token = $userModel->createToken('api-token')->plainTextToken;
-
-        return response()->json([
-            'user' => $user,
-            'token' => $token,
-        ]);
     }
 
     /**
@@ -129,7 +129,7 @@ class AuthController extends Controller
             return response()->json(['message' => 'User not found'], 404);
         }
 
-        // Send email with reset link
+        // TODO: Send email with reset link
         // In a real application, you would use Mail facade
         // For simplicity, we'll just return the token
 

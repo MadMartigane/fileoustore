@@ -5,81 +5,97 @@ declare(strict_types=1);
 namespace App\Models;
 
 use DateTime;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use App\Traits\CamelCaseAttributes;
 
-class File
+class File extends Model
 {
-    public string $id;
-    public string $name;
-    public string $path;
-    public string $mime_type;
-    public int $size;
-    public string $owner_id;
-    public array $shared_with = [];
-    public array $permissions = [];
-    public DateTime $created_at;
-    public DateTime $updated_at;
+    use CamelCaseAttributes;
+    
+    /**
+     * The table associated with the model.
+     *
+     * @var string
+     */
+    protected $table = 'files';
+    
+    /**
+     * The primary key for the model.
+     *
+     * @var string
+     */
+    protected $primaryKey = 'id';
+    
+    /**
+     * Indicates if the IDs are auto-incrementing.
+     *
+     * @var bool
+     */
+    public $incrementing = false;
+    
+    /**
+     * The data type of the auto-incrementing ID.
+     *
+     * @var string
+     */
+    protected $keyType = 'string';
 
     /**
-     * Create a new File instance.
+     * The attributes that are mass assignable.
      *
-     * @param array $attributes
+     * @var array
      */
-    public function __construct(array $attributes = [])
+    protected $fillable = [
+        'id',
+        'name',
+        'path',
+        'mime_type',
+        'size',
+        'owner_id',
+        'shared_with',
+        'permissions',
+    ];
+
+    /**
+     * The attributes that should be cast.
+     *
+     * @var array
+     */
+    protected $casts = [
+        'size' => 'integer',
+        'shared_with' => 'array',
+        'permissions' => 'array',
+    ];
+
+    /**
+     * Boot function to set ID if not provided
+     */
+    protected static function boot()
     {
-        $this->id = $attributes['id'] ?? uniqid('file_');
-        $this->name = $attributes['name'] ?? '';
-        $this->path = $attributes['path'] ?? '';
-        $this->mime_type = $attributes['mime_type'] ?? '';
-        $this->size = $attributes['size'] ?? 0;
-        $this->owner_id = $attributes['owner_id'] ?? '';
-        $this->shared_with = $attributes['shared_with'] ?? [];
-        $this->permissions = $attributes['permissions'] ?? [];
-        $this->created_at = $attributes['created_at'] ?? new DateTime();
-        $this->updated_at = $attributes['updated_at'] ?? new DateTime();
+        parent::boot();
+        
+        static::creating(function ($model) {
+            if (!$model->id) {
+                $model->id = 'file_' . uniqid();
+            }
+            if (empty($model->shared_with)) {
+                $model->shared_with = [];
+            }
+            if (empty($model->permissions)) {
+                $model->permissions = [];
+            }
+        });
     }
 
     /**
-     * Convert to array for storage.
+     * Get the user that owns the file.
      *
-     * @return array
+     * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
      */
-    public function toArray(): array
+    public function owner(): BelongsTo
     {
-        return [
-            'id' => $this->id,
-            'name' => $this->name,
-            'path' => $this->path,
-            'mime_type' => $this->mime_type,
-            'size' => $this->size,
-            'owner_id' => $this->owner_id,
-            'shared_with' => $this->shared_with,
-            'permissions' => $this->permissions,
-            'created_at' => $this->created_at->format('Y-m-d H:i:s'),
-            'updated_at' => $this->updated_at->format('Y-m-d H:i:s'),
-        ];
-    }
-
-    /**
-     * Create from array.
-     *
-     * @param array $data
-     * @return self
-     */
-    public static function fromArray(array $data): self
-    {
-        $file = new self();
-        $file->id = $data['id'] ?? uniqid('file_');
-        $file->name = $data['name'] ?? '';
-        $file->path = $data['path'] ?? '';
-        $file->mime_type = $data['mime_type'] ?? '';
-        $file->size = $data['size'] ?? 0;
-        $file->owner_id = $data['owner_id'] ?? '';
-        $file->shared_with = $data['shared_with'] ?? [];
-        $file->permissions = $data['permissions'] ?? [];
-        $file->created_at = isset($data['created_at']) ? new DateTime($data['created_at']) : new DateTime();
-        $file->updated_at = isset($data['updated_at']) ? new DateTime($data['updated_at']) : new DateTime();
-
-        return $file;
+        return $this->belongsTo(User::class, 'owner_id');
     }
 
     /**
@@ -97,8 +113,10 @@ class File
         }
 
         // Check shared permissions
-        if (isset($this->shared_with[$userId])) {
-            return in_array($permission, $this->shared_with[$userId], true);
+        $sharedWith = $this->shared_with ?? [];
+        
+        if (isset($sharedWith[$userId])) {
+            return in_array($permission, $sharedWith[$userId], true);
         }
 
         return false;
@@ -113,8 +131,10 @@ class File
      */
     public function shareWith(string $userId, array $permissions): void
     {
-        $this->shared_with[$userId] = $permissions;
-        $this->updated_at = new DateTime();
+        $sharedWith = $this->shared_with ?? [];
+        $sharedWith[$userId] = $permissions;
+        $this->shared_with = $sharedWith;
+        $this->save();
     }
 
     /**
@@ -125,9 +145,22 @@ class File
      */
     public function removeShare(string $userId): void
     {
-        if (isset($this->shared_with[$userId])) {
-            unset($this->shared_with[$userId]);
-            $this->updated_at = new DateTime();
+        $sharedWith = $this->shared_with ?? [];
+        
+        if (isset($sharedWith[$userId])) {
+            unset($sharedWith[$userId]);
+            $this->shared_with = $sharedWith;
+            $this->save();
         }
+    }
+    
+    /**
+     * Convert to camelCase array for API responses.
+     *
+     * @return array
+     */
+    public function toApiResponse(): array
+    {
+        return $this->snakeToCamel($this->toArray());
     }
 }
