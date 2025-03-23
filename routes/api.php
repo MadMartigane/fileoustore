@@ -21,6 +21,14 @@ Route::get('/test', function () {
     return response()->json(['message' => 'API is working!']);
 });
 
+// Test route to verify authentication
+Route::get('/test-auth', function () {
+    return response()->json([
+        'message' => 'You are authenticated!',
+        'user' => auth()->user()->toApiResponse(),
+    ]);
+})->middleware('auth:sanctum');
+
 // Auth routes
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login']);

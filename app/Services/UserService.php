@@ -4,51 +4,30 @@ declare(strict_types=1);
 
 namespace App\Services;
 
-use SleekDB\Store;
+use App\Models\User;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 
 class UserService
 {
-    private Store $store;
-
-    /**
-     * Create a new UserService instance.
-     */
-    public function __construct()
-    {
-        $databaseDir = storage_path('sleekdb');
-        
-        // Ensure the directory exists
-        if (!file_exists($databaseDir)) {
-            mkdir($databaseDir, 0755, true);
-        }
-        
-        $this->store = new Store('users', $databaseDir, [
-            'auto_cache' => true,
-            'timeout' => false,
-        ]);
-    }
-
     /**
      * Create a new user.
      *
      * @param array $data
-     * @return array
+     * @return User
      */
-    public function create(array $data): array
+    public function create(array $data): User
     {
-        $userData = [
+        $user = User::create([
             'id' => uniqid('user_'),
             'name' => $data['name'],
             'email' => $data['email'],
             'password' => Hash::make($data['password']),
             'is_admin' => $data['is_admin'] ?? false,
-            'email_verified_at' => null,
-            'created_at' => date('Y-m-d H:i:s'),
-            'updated_at' => date('Y-m-d H:i:s'),
-        ];
+        ]);
 
-        return $this->store->insert($userData);
+        return $user;
     }
 
     /**
@@ -56,66 +35,55 @@ class UserService
      *
      * @param string $id
      * @param array $data
-     * @return array|null
+     * @return User|null
      */
-    public function update(string $id, array $data): ?array
+    public function update(string $id, array $data): ?User
     {
         $user = $this->findById($id);
         if (!$user) {
             return null;
         }
 
-        $userData = [
-            'id' => $user['id'],
-        ];
-
         if (isset($data['name'])) {
-            $userData['name'] = $data['name'];
+            $user->name = $data['name'];
         }
 
         if (isset($data['email'])) {
-            $userData['email'] = $data['email'];
+            $user->email = $data['email'];
         }
 
         if (isset($data['password'])) {
-            $userData['password'] = Hash::make($data['password']);
+            $user->password = Hash::make($data['password']);
         }
 
         if (isset($data['is_admin'])) {
-            $userData['is_admin'] = (bool) $data['is_admin'];
+            $user->is_admin = (bool) $data['is_admin'];
         }
 
-        $userData['updated_at'] = date('Y-m-d H:i:s');
-
-        return $this->store->update($userData);
+        $user->save();
+        return $user;
     }
 
     /**
      * Find a user by ID.
      *
      * @param string $id
-     * @return array|null
+     * @return User|null
      */
-    public function findById(string $id): ?array
+    public function findById(string $id): ?User
     {
-        return $this->store->findById($id);
+        return User::find($id);
     }
 
     /**
      * Find a user by email.
      *
      * @param string $email
-     * @return array|null
+     * @return User|null
      */
-    public function findByEmail(string $email): ?array
+    public function findByEmail(string $email): ?User
     {
-        $results = $this->store->createQueryBuilder()
-            ->where([['email', '=', $email]])
-            ->limit(1)
-            ->getQuery()
-            ->fetch();
-        
-        return !empty($results) ? $results[0] : null;
+        return User::where('email', $email)->first();
     }
 
     /**
@@ -126,17 +94,22 @@ class UserService
      */
     public function delete(string $id): bool
     {
-        return $this->store->deleteById($id);
+        $user = $this->findById($id);
+        if (!$user) {
+            return false;
+        }
+
+        return (bool) $user->delete();
     }
 
     /**
      * Get all users.
      *
-     * @return array
+     * @return \Illuminate\Database\Eloquent\Collection
      */
-    public function all(): array
+    public function all()
     {
-        return $this->store->findAll();
+        return User::all();
     }
 
     /**
@@ -144,32 +117,15 @@ class UserService
      *
      * @param string $email
      * @param string $password
-     * @return array|null
+     * @return User|null
      */
-    public function verifyCredentials(string $email, string $password): ?array
+    public function verifyCredentials(string $email, string $password): ?User
     {
         $user = $this->findByEmail($email);
         
-        if (!$user || !Hash::check($password, $user['password'])) {
+        if (!$user || !Hash::check($password, $user->password)) {
             return null;
         }
-        
-        return $user;
-    }
-    
-    /**
-     * Create a Laravel User model from database array.
-     *
-     * @param array $userData
-     * @return \App\Models\User
-     */
-    public function createUserModel(array $userData): \App\Models\User
-    {
-        $user = new \App\Models\User();
-        $user->id = $userData['id'];
-        $user->name = $userData['name'];
-        $user->email = $userData['email'];
-        $user->is_admin = $userData['is_admin'] ?? false;
         
         return $user;
     }
@@ -187,33 +143,15 @@ class UserService
             return null;
         }
 
-        // Create token store if not exists
-        $databaseDir = storage_path('sleekdb');
-        if (!file_exists($databaseDir)) {
-            mkdir($databaseDir, 0755, true);
-        }
-        
-        $tokenStore = new Store('password_reset_tokens', $databaseDir, [
-            'auto_cache' => true,
-            'timeout' => false,
-        ]);
-
         // Delete any existing tokens for this user
-        $existingTokens = $tokenStore->createQueryBuilder()
-            ->where([['email', '=', $email]])
-            ->getQuery()
-            ->fetch();
-            
-        foreach ($existingTokens as $token) {
-            $tokenStore->deleteById($token['_id']);
-        }
+        DB::table('password_reset_tokens')->where('email', $email)->delete();
 
         // Create new token
-        $token = bin2hex(random_bytes(32));
-        $tokenStore->insert([
+        $token = Str::random(64);
+        DB::table('password_reset_tokens')->insert([
             'email' => $email,
             'token' => $token,
-            'created_at' => date('Y-m-d H:i:s'),
+            'created_at' => now(),
         ]);
 
         return $token;
@@ -228,33 +166,17 @@ class UserService
      */
     public function verifyPasswordResetToken(string $email, string $token): bool
     {
-        $databaseDir = storage_path('sleekdb');
-        if (!file_exists($databaseDir)) {
-            mkdir($databaseDir, 0755, true);
-        }
-        
-        $tokenStore = new Store('password_reset_tokens', $databaseDir, [
-            'auto_cache' => true,
-            'timeout' => false,
-        ]);
+        $tokenRecord = DB::table('password_reset_tokens')
+            ->where('email', $email)
+            ->where('token', $token)
+            ->first();
 
-        $result = $tokenStore->createQueryBuilder()
-            ->where([
-                ['email', '=', $email],
-                ['token', '=', $token],
-            ])
-            ->limit(1)
-            ->getQuery()
-            ->fetch();
-
-        if (empty($result)) {
+        if (!$tokenRecord) {
             return false;
         }
 
-        $result = $result[0];
-
         // Check if token is expired (1 hour expiration)
-        $tokenCreatedAt = strtotime($result['created_at']);
+        $tokenCreatedAt = strtotime($tokenRecord->created_at);
         if ((time() - $tokenCreatedAt) > 3600) {
             return false;
         }
@@ -282,27 +204,10 @@ class UserService
         }
 
         // Update password
-        $this->update($user['id'], ['password' => $newPassword]);
+        $this->update($user->id, ['password' => $newPassword]);
 
         // Delete token
-        $databaseDir = storage_path('sleekdb');
-        if (!file_exists($databaseDir)) {
-            mkdir($databaseDir, 0755, true);
-        }
-        
-        $tokenStore = new Store('password_reset_tokens', $databaseDir, [
-            'auto_cache' => true,
-            'timeout' => false,
-        ]);
-        
-        $tokens = $tokenStore->createQueryBuilder()
-            ->where([['email', '=', $email]])
-            ->getQuery()
-            ->fetch();
-            
-        foreach ($tokens as $tokenData) {
-            $tokenStore->deleteById($tokenData['_id']);
-        }
+        DB::table('password_reset_tokens')->where('email', $email)->delete();
 
         return true;
     }

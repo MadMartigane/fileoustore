@@ -32,12 +32,13 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        // Ensure SleekDB storage directory exists
-        $sleekDbDir = storage_path('sleekdb');
-        if (!file_exists($sleekDbDir)) {
-            mkdir($sleekDbDir, 0755, true);
+        // Ensure storage directories exist
+        $filesDir = storage_path('app/files');
+        if (!file_exists($filesDir)) {
+            mkdir($filesDir, 0755, true);
         }
         
-        // Sanctum configuration will be handled by the default Laravel settings
+        // Use the standard Personal Access Token model
+        Sanctum::usePersonalAccessTokenModel(\Laravel\Sanctum\PersonalAccessToken::class);
     }
 }

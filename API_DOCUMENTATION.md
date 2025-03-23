@@ -34,9 +34,9 @@ POST /api/register
     "id": "user_6123871623",
     "name": "John Doe",
     "email": "john@example.com",
-    "is_admin": false,
-    "created_at": "2023-04-10 12:00:00",
-    "updated_at": "2023-04-10 12:00:00"
+    "isAdmin": false,
+    "createdAt": "2023-04-10 12:00:00",
+    "updatedAt": "2023-04-10 12:00:00"
   }
 }
 ```
@@ -62,9 +62,9 @@ POST /api/login
     "id": "user_6123871623",
     "name": "John Doe",
     "email": "john@example.com",
-    "is_admin": false,
-    "created_at": "2023-04-10 12:00:00",
-    "updated_at": "2023-04-10 12:00:00"
+    "isAdmin": false,
+    "createdAt": "2023-04-10 12:00:00",
+    "updatedAt": "2023-04-10 12:00:00"
   },
   "token": "your-api-token"
 }
@@ -143,17 +143,17 @@ GET /api/users
       "id": "user_6123871623",
       "name": "John Doe",
       "email": "john@example.com",
-      "is_admin": false,
-      "created_at": "2023-04-10 12:00:00",
-      "updated_at": "2023-04-10 12:00:00"
+      "isAdmin": false,
+      "createdAt": "2023-04-10 12:00:00",
+      "updatedAt": "2023-04-10 12:00:00"
     },
     {
       "id": "user_7123871624",
       "name": "Admin User",
       "email": "admin@example.com",
-      "is_admin": true,
-      "created_at": "2023-04-10 12:00:00",
-      "updated_at": "2023-04-10 12:00:00"
+      "isAdmin": true,
+      "createdAt": "2023-04-10 12:00:00",
+      "updatedAt": "2023-04-10 12:00:00"
     }
   ]
 }
@@ -183,9 +183,9 @@ POST /api/users
     "id": "user_8123871625",
     "name": "New User",
     "email": "newuser@example.com",
-    "is_admin": false,
-    "created_at": "2023-04-10 12:00:00",
-    "updated_at": "2023-04-10 12:00:00"
+    "isAdmin": false,
+    "createdAt": "2023-04-10 12:00:00",
+    "updatedAt": "2023-04-10 12:00:00"
   }
 }
 ```
@@ -193,7 +193,7 @@ POST /api/users
 ### Get User Details
 
 ```
-GET /api/users/{id}
+GET /api/users/{user}
 ```
 
 > Note: Regular users can only view their own profile. Admins can view any user's profile.
@@ -205,9 +205,9 @@ GET /api/users/{id}
     "id": "user_6123871623",
     "name": "John Doe",
     "email": "john@example.com",
-    "is_admin": false,
-    "created_at": "2023-04-10 12:00:00",
-    "updated_at": "2023-04-10 12:00:00"
+    "isAdmin": false,
+    "createdAt": "2023-04-10 12:00:00",
+    "updatedAt": "2023-04-10 12:00:00"
   }
 }
 ```
@@ -215,7 +215,7 @@ GET /api/users/{id}
 ### Update User
 
 ```
-PUT /api/users/{id}
+PUT /api/users/{user}
 ```
 
 > Note: Regular users can only update their own profile. Admins can update any user.
@@ -237,9 +237,9 @@ PUT /api/users/{id}
     "id": "user_6123871623",
     "name": "John Updated",
     "email": "john.updated@example.com",
-    "is_admin": false,
-    "created_at": "2023-04-10 12:00:00",
-    "updated_at": "2023-04-10 14:00:00"
+    "isAdmin": false,
+    "createdAt": "2023-04-10 12:00:00",
+    "updatedAt": "2023-04-10 14:00:00"
   }
 }
 ```
@@ -247,7 +247,7 @@ PUT /api/users/{id}
 ### Delete User (Admin Only)
 
 ```
-DELETE /api/users/{id}
+DELETE /api/users/{user}
 ```
 
 **Response:**
@@ -268,34 +268,34 @@ GET /api/files
 **Response:**
 ```json
 {
-  "owned_files": [
+  "ownedFiles": [
     {
       "id": "file_9123871626",
       "name": "document.pdf",
       "path": "files/document_9123871626.pdf",
-      "mime_type": "application/pdf",
+      "mimeType": "application/pdf",
       "size": 1024567,
-      "owner_id": "user_6123871623",
-      "shared_with": {
+      "ownerId": "user_6123871623",
+      "sharedWith": {
         "user_7123871624": ["read", "write"]
       },
-      "created_at": "2023-04-10 12:00:00",
-      "updated_at": "2023-04-10 12:00:00"
+      "createdAt": "2023-04-10 12:00:00",
+      "updatedAt": "2023-04-10 12:00:00"
     }
   ],
-  "shared_files": [
+  "sharedFiles": [
     {
       "id": "file_8123871625",
       "name": "shared-document.docx",
       "path": "files/shared-document_8123871625.docx",
-      "mime_type": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      "mimeType": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
       "size": 2048567,
-      "owner_id": "user_7123871624",
-      "shared_with": {
+      "ownerId": "user_7123871624",
+      "sharedWith": {
         "user_6123871623": ["read"]
       },
-      "created_at": "2023-04-10 12:00:00",
-      "updated_at": "2023-04-10 12:00:00"
+      "createdAt": "2023-04-10 12:00:00",
+      "updatedAt": "2023-04-10 12:00:00"
     }
   ]
 }
@@ -318,19 +318,19 @@ This endpoint accepts multipart/form-data.
   "id": "file_9123871626",
   "name": "document.pdf",
   "path": "files/document_9123871626.pdf",
-  "mime_type": "application/pdf",
+  "mimeType": "application/pdf",
   "size": 1024567,
-  "owner_id": "user_6123871623",
-  "shared_with": {},
-  "created_at": "2023-04-10 12:00:00",
-  "updated_at": "2023-04-10 12:00:00"
+  "ownerId": "user_6123871623",
+  "sharedWith": {},
+  "createdAt": "2023-04-10 12:00:00",
+  "updatedAt": "2023-04-10 12:00:00"
 }
 ```
 
 ### Get File Details
 
 ```
-GET /api/files/{id}
+GET /api/files/{file}
 ```
 
 > Note: Users can only view files they own or have been shared with. Admins can view any file.
@@ -341,14 +341,14 @@ GET /api/files/{id}
   "id": "file_9123871626",
   "name": "document.pdf",
   "path": "files/document_9123871626.pdf",
-  "mime_type": "application/pdf",
+  "mimeType": "application/pdf",
   "size": 1024567,
-  "owner_id": "user_6123871623",
-  "shared_with": {
+  "ownerId": "user_6123871623",
+  "sharedWith": {
     "user_7123871624": ["read", "write"]
   },
-  "created_at": "2023-04-10 12:00:00",
-  "updated_at": "2023-04-10 12:00:00"
+  "createdAt": "2023-04-10 12:00:00",
+  "updatedAt": "2023-04-10 12:00:00"
 }
 ```
 
@@ -366,7 +366,7 @@ The file will be downloaded with appropriate headers.
 ### Update File Metadata
 
 ```
-PUT /api/files/{id}
+PUT /api/files/{file}
 ```
 
 > Note: Users can only update files they own or have write permission for. Admins can update any file.
@@ -384,21 +384,21 @@ PUT /api/files/{id}
   "id": "file_9123871626",
   "name": "renamed-document.pdf",
   "path": "files/document_9123871626.pdf",
-  "mime_type": "application/pdf",
+  "mimeType": "application/pdf",
   "size": 1024567,
-  "owner_id": "user_6123871623",
-  "shared_with": {
+  "ownerId": "user_6123871623",
+  "sharedWith": {
     "user_7123871624": ["read", "write"]
   },
-  "created_at": "2023-04-10 12:00:00",
-  "updated_at": "2023-04-10 14:00:00"
+  "createdAt": "2023-04-10 12:00:00",
+  "updatedAt": "2023-04-10 14:00:00"
 }
 ```
 
 ### Delete a File
 
 ```
-DELETE /api/files/{id}
+DELETE /api/files/{file}
 ```
 
 > Note: Users can only delete files they own or have delete permission for. Admins can delete any file.
@@ -448,6 +448,21 @@ DELETE /api/files/{id}/share/{userId}
 }
 ```
 
+## Test Endpoint
+
+### Test API Connection
+
+```
+GET /api/test
+```
+
+**Response:**
+```json
+{
+  "message": "API is working!"
+}
+```
+
 ## Error Responses
 
 The API returns appropriate HTTP status codes along with error messages.
@@ -467,7 +482,8 @@ The API returns appropriate HTTP status codes along with error messages.
 #### Unauthorized (401)
 ```json
 {
-  "message": "Invalid credentials"
+  "error": "Unauthenticated",
+  "message": "You need to be logged in to access this resource"
 }
 ```
 
@@ -488,6 +504,13 @@ The API returns appropriate HTTP status codes along with error messages.
 #### Server Error (500)
 ```json
 {
-  "message": "Failed to perform operation"
+  "message": "Failed to perform operation",
+  "debugTrace": "Error details..."
 }
 ```
+
+## Storage Implementation Note
+
+This API uses SQLite as the database storage engine. All user data, file metadata, and authentication tokens are stored in the SQLite database. The physical files are stored on the server's file system and referenced in the database.
+
+The authentication system uses Laravel's built-in authentication with Sanctum for API token management.

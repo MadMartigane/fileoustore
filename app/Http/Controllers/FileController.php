@@ -33,12 +33,12 @@ class FileController extends Controller
         $sharedFiles = $this->fileStore->getSharedFiles($user->id);
 
         return response()->json([
-            'owned_files' => array_map(function ($file) {
-                return $file->toArray();
-            }, $ownedFiles),
-            'shared_files' => array_map(function ($file) {
-                return $file->toArray();
-            }, $sharedFiles),
+            'ownedFiles' => $ownedFiles->map(function ($file) {
+                return $file->toApiResponse();
+            })->values(),
+            'sharedFiles' => $sharedFiles->map(function ($file) {
+                return $file->toApiResponse();
+            })->values(),
         ]);
     }
 
@@ -60,7 +60,7 @@ class FileController extends Controller
 
         $file = $this->fileStore->store($request->file('file'), $request->user()->id);
 
-        return response()->json($file->toArray(), 201);
+        return response()->json($file->toApiResponse(), 201);
     }
 
     /**
@@ -86,7 +86,7 @@ class FileController extends Controller
         }
 
         // Return file info
-        return response()->json($file->toArray());
+        return response()->json($file->toApiResponse());
     }
 
     /**
@@ -151,7 +151,7 @@ class FileController extends Controller
 
         $updatedFile = $this->fileStore->update($id, $request->only(['name']));
 
-        return response()->json($updatedFile->toArray());
+        return response()->json($updatedFile->toApiResponse());
     }
 
     /**

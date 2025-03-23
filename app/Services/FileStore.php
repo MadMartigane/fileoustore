@@ -4,15 +4,12 @@ declare(strict_types=1);
 
 namespace App\Services;
 
-use DateTime;
 use App\Models\File;
-use SleekDB\Store;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 
 class FileStore
 {
-    private Store $store;
     private string $storageDir;
 
     /**
@@ -20,18 +17,6 @@ class FileStore
      */
     public function __construct()
     {
-        $databaseDir = storage_path('sleekdb');
-        
-        // Ensure the directory exists
-        if (!file_exists($databaseDir)) {
-            mkdir($databaseDir, 0755, true);
-        }
-        
-        $this->store = new Store('files', $databaseDir, [
-            'auto_cache' => true,
-            'timeout' => false,
-        ]);
-        
         $this->storageDir = storage_path('app/files');
 
         // Ensure storage directory exists
@@ -56,21 +41,17 @@ class FileStore
         $storagePath = $uploadedFile->storeAs('files', $uniqueName, 'local');
 
         // Create file record
-        $file = new File([
+        $file = File::create([
             'name' => $uploadedFile->getClientOriginalName(),
             'path' => $storagePath,
             'mime_type' => $uploadedFile->getMimeType(),
             'size' => $uploadedFile->getSize(),
             'owner_id' => $ownerId,
-            'created_at' => new DateTime(),
-            'updated_at' => new DateTime(),
+            'shared_with' => [],
+            'permissions' => [],
         ]);
 
-        // Save to SleekDB
-        $data = $file->toArray();
-        $result = $this->store->insert($data);
-        
-        return File::fromArray($result);
+        return $file;
     }
 
     /**
@@ -81,56 +62,30 @@ class FileStore
      */
     public function get(string $id): ?File
     {
-        $result = $this->store->findById($id);
-        if (!$result) {
-            return null;
-        }
-
-        return File::fromArray($result);
+        return File::find($id);
     }
 
     /**
      * Get all files owned by a user.
      *
      * @param string $ownerId
-     * @return array
+     * @return \Illuminate\Database\Eloquent\Collection
      */
-    public function getFilesByOwner(string $ownerId): array
+    public function getFilesByOwner(string $ownerId)
     {
-        $results = $this->store->createQueryBuilder()
-            ->where([['owner_id', '=', $ownerId]])
-            ->getQuery()
-            ->fetch();
-            
-        $files = [];
-
-        foreach ($results as $result) {
-            $files[] = File::fromArray($result);
-        }
-
-        return $files;
+        return File::where('owner_id', $ownerId)->get();
     }
 
     /**
      * Get all files shared with a user.
      *
      * @param string $userId
-     * @return array
+     * @return \Illuminate\Database\Eloquent\Collection
      */
-    public function getSharedFiles(string $userId): array
+    public function getSharedFiles(string $userId)
     {
-        // SleekDB doesn't have a direct way to search in arrays, so we need to get all files
-        // and filter them in PHP
-        $allFiles = $this->store->findAll();
-        $sharedFiles = [];
-
-        foreach ($allFiles as $fileData) {
-            if (isset($fileData['shared_with'][$userId])) {
-                $sharedFiles[] = File::fromArray($fileData);
-            }
-        }
-
-        return $sharedFiles;
+        // SQL LIKE query to find shared_with containing userId
+        return File::where('shared_with', 'LIKE', '%"' . $userId . '"%')->get();
     }
 
     /**
@@ -156,11 +111,8 @@ class FileStore
             $file->shared_with = $data['shared_with'];
         }
 
-        $file->updated_at = new DateTime();
-        
-        // Save to SleekDB
-        $this->store->update($file->toArray());
-        
+        $file->save();
+
         return $file;
     }
 
@@ -179,11 +131,9 @@ class FileStore
 
         // Delete physical file
         Storage::disk('local')->delete($file->path);
-        
-        // Delete from SleekDB
-        $this->store->deleteById($id);
-        
-        return true;
+
+        // Delete from database
+        return (bool) $file->delete();
     }
 
     /**
@@ -202,7 +152,6 @@ class FileStore
         }
 
         $file->shareWith($userId, $permissions);
-        $this->store->update($file->toArray());
         
         return true;
     }
@@ -222,7 +171,6 @@ class FileStore
         }
 
         $file->removeShare($userId);
-        $this->store->update($file->toArray());
         
         return true;
     }
