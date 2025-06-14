@@ -140,6 +140,145 @@ To run the tests:
 composer test
 ```
 
+## Deployment
+
+Deploying FileouStore to a production environment requires a few additional steps to ensure security and performance.
+
+### Server Requirements
+
+- **Web Server**: Nginx or Apache is recommended.
+- **PHP**: Ensure your production server has the correct PHP version installed (as specified in `composer.json`) with necessary extensions (e.g., `pdo_sqlite`, `mbstring`, `openssl`, `tokenizer`, `xml`).
+- **Composer**: For installing dependencies.
+
+### Environment Configuration
+
+1.  **`.env` File**:
+    *   Ensure your `.env` file is correctly configured for your production environment.
+    *   **CRITICAL**: Set `APP_ENV=production` and `APP_DEBUG=false`.
+    *   Configure `APP_URL` to your production domain.
+    *   Set up your production database connection details (even if it's SQLite, ensure the path is correct and writable by the web server).
+    *   Generate a new `APP_KEY` specifically for the production environment using `php artisan key:generate`. **Do not use your development key.**
+
+2.  **Permissions**:
+    *   Ensure the web server has write permissions to the `storage` and `bootstrap/cache` directories.
+    *   Example: `sudo chown -R www-data:www-data storage bootstrap/cache`
+    *   Example: `sudo chmod -R 775 storage bootstrap/cache`
+
+### Optimization
+
+Laravel provides several commands to optimize your application for production:
+
+```bash
+php artisan config:cache
+php artisan route:cache
+php artisan view:cache
+php artisan event:cache # If you are using events extensively
+```
+
+It's good practice to run these commands as part of your deployment script. To clear these caches during an update, you can use:
+
+```bash
+php artisan optimize:clear
+```
+
+Then re-run the caching commands.
+
+### Web Server Configuration
+
+**Nginx Example:**
+
+A basic Nginx configuration might look like this (ensure you adapt it to your server setup):
+
+```nginx
+server {
+    listen 80;
+    server_name yourdomain.com;
+    root /path/to/your/fileoustore/public; # Point to the public directory
+
+    add_header X-Frame-Options "SAMEORIGIN";
+    add_header X-Content-Type-Options "nosniff";
+
+    index index.php;
+
+    charset utf-8;
+
+    location / {
+        try_files $uri $uri/ /index.php?$query_string;
+    }
+
+    location = /favicon.ico { access_log off; log_not_found off; }
+    location = /robots.txt  { access_log off; log_not_found off; }
+
+    error_page 404 /index.php;
+
+    location ~ \.php$ {
+        fastcgi_pass unix:/var/run/php/php8.x-fpm.sock; # Adjust to your PHP-FPM version
+        fastcgi_param SCRIPT_FILENAME $realpath_root$fastcgi_script_name;
+        include fastcgi_params;
+    }
+
+    location ~ /\.(?!well-known).* {
+        deny all;
+    }
+}
+```
+
+**Apache Example:**
+
+Ensure `mod_rewrite` is enabled. Your `.htaccess` file in the `public` directory (Laravel includes one by default) should handle most of the work. You might need to configure your Apache VirtualHost:
+
+```apache
+<VirtualHost *:80>
+    ServerName yourdomain.com
+    DocumentRoot /path/to/your/fileoustore/public
+
+    <Directory /path/to/your/fileoustore/public>
+        AllowOverride All
+        Require all granted
+    </Directory>
+
+    ErrorLog ${APACHE_LOG_DIR}/error.log
+    CustomLog ${APACHE_LOG_DIR}/access.log combined
+</VirtualHost>
+```
+
+### Running the Application
+
+- **Queue Worker (If Applicable)**: If your application uses queues for background tasks (e.g., sending emails, processing jobs), you'll need to set up a process manager like Supervisor to keep the queue worker running:
+  `php artisan queue:work --daemon`
+
+  Example Supervisor configuration (`/etc/supervisor/conf.d/fileoustore-worker.conf`):
+
+  ```ini
+  [program:fileoustore-worker]
+  process_name=%(program_name)s_%(process_num)02d
+  command=php /path/to/your/fileoustore/artisan queue:work --sleep=3 --tries=3 --daemon
+  autostart=true
+  autorestart=true
+  user=your_server_user ; or www-data
+  numprocs=1 ; Adjust as needed
+  redirect_stderr=true
+  stdout_logfile=/path/to/your/fileoustore/storage/logs/worker.log
+  stopwaitsecs=3600
+  ```
+  Remember to run `sudo supervisorctl reread` and `sudo supervisorctl update` after creating/modifying the configuration.
+
+- **Task Scheduling**: If you have scheduled tasks defined in `app/Console/Kernel.php`, set up a cron job to run the Laravel scheduler once per minute:
+
+  ```cron
+  * * * * * cd /path-to-your-project && php artisan schedule:run >> /dev/null 2>&1
+  ```
+
+### Security Considerations
+
+*   **HTTPS**: Always use HTTPS in production. Configure SSL certificates (e.g., using Let's Encrypt).
+*   **Permissions**: Be strict with file and directory permissions. The web server should only have write access to directories it absolutely needs (e.g., `storage`, `bootstrap/cache`).
+*   **Disable Directory Listing**: Ensure your web server configuration prevents directory listing.
+*   **Regular Updates**: Keep your server, PHP, Laravel, and other dependencies updated with security patches.
+*   **Backup**: Implement a regular backup strategy for your files and database.
+
+This section provides a general guide. Specific deployment steps may vary based on your hosting provider and server setup.
+
 ## Storage Configuration
 
 Files are stored in the `storage/app/files` directory by default. This can be configured in the `config/filesystems.php` file.
