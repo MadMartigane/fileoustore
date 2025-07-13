@@ -2,6 +2,10 @@ import express, { Request, Response } from "express";
 import jwt from "jsonwebtoken";
 import { z } from "zod";
 import { v4 as uuidv4 } from "uuid";
+import dotenv from "dotenv";
+
+// Load environment variables from .env file
+dotenv.config();
 
 // Types
 interface User {
@@ -38,7 +42,7 @@ const users: User[] = [];
 const dataSets: DataSet[] = [];
 
 // JWT Secret (use environment variable in production)
-const JWT_SECRET = "your-secret-key";
+const JWT_SECRET = process.env.JWT_SECRET || "your-secret-key";
 
 // Middleware for authentication
 const authenticate = (req: Request, res: Response, next: () => void) => {
