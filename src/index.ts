@@ -4,6 +4,7 @@ import { z } from "zod";
 import { v4 as uuidv4 } from "uuid";
 import Database from "better-sqlite3";
 import dotenv from "dotenv";
+import bcrypt from "bcrypt";
 
 // Load environment variables from .env file
 dotenv.config();
@@ -93,12 +94,13 @@ const app = express();
 app.use(express.json());
 
 // User registration
-app.post("/register", (req: Request, res: Response) => {
+app.post("/register", async (req: Request, res: Response) => {
   const { username, password } = req.body;
+  const hashedPassword = await bcrypt.hash(password, 10);
   const user: User = {
     id: uuidv4(),
     username,
-    password,
+    password: hashedPassword,
   };
 
   try {
@@ -114,14 +116,14 @@ app.post("/register", (req: Request, res: Response) => {
 });
 
 // User login
-app.post("/login", (req: Request, res: Response) => {
+app.post("/login", async (req: Request, res: Response) => {
   const { username, password } = req.body;
   const stmt = db.prepare(
-    "SELECT * FROM users WHERE username = ? AND password = ?",
+    "SELECT * FROM users WHERE username = ?",
   );
-  const user = stmt.get(username, password) as User | undefined;
+  const user = stmt.get(username) as User | undefined;
 
-  if (!user) {
+  if (!user || !(await bcrypt.compare(password, user.password))) {
     return res.status(401).json({ error: "Invalid credentials" });
   }
   const token = jwt.sign({ userId: user.id }, JWT_SECRET);
