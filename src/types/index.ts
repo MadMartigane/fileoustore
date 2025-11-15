@@ -1,7 +1,10 @@
+export type Role = "admin" | "user" | "guest";
+
 export type User = {
   id: string;
   username: string;
   password: string; // In production, use hashed passwords
+  role: Role;
 };
 
 export type DataSet = {
@@ -21,6 +24,6 @@ import "express";
 declare module "express" {
   // biome-ignore lint/style/useConsistentTypeDefinitions: Module augmentation requires interface
   interface Request {
-    user?: { id: string };
+    user?: { id: string; role: Role };
   }
 }

@@ -11,9 +11,10 @@ export const registerUser = (username: string, password: string) => {
     id: generateUuid(),
     username,
     password, // Note: In production, hash the password
+    role: "user",
   };
   createUser(user);
-  const token = signToken(user.id);
+  const token = signToken(user.id, user.role);
   return { token };
 };
 
@@ -22,6 +23,6 @@ export const loginUser = (username: string, password: string) => {
   if (!user) {
     throw new Error("Invalid credentials");
   }
-  const token = signToken(user.id);
+  const token = signToken(user.id, user.role);
   return { token };
 };
