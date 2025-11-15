@@ -1,17 +1,19 @@
 import { Router } from "express";
-import * as datasetsController from "../controllers/datasetsController";
+import {
+  create,
+  delete_,
+  get,
+  update,
+  updatePermissions,
+} from "../controllers/datasets-controller";
 import { authenticate } from "../middleware/auth";
 
 const router = Router();
 
-router.post("/", authenticate, datasetsController.create);
-router.get("/:id", authenticate, datasetsController.get);
-router.put("/:id", authenticate, datasetsController.update);
-router.delete("/:id", authenticate, datasetsController.delete_);
-router.patch(
-	"/:id/permissions",
-	authenticate,
-	datasetsController.updatePermissions,
-);
+router.post("/", authenticate, create);
+router.get("/:id", authenticate, get);
+router.put("/:id", authenticate, update);
+router.delete("/:id", authenticate, delete_);
+router.patch("/:id/permissions", authenticate, updatePermissions);
 
 export default router;
