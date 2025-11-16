@@ -1,4 +1,3 @@
-
 # Dataset API
 
 ## Purpose
@@ -70,37 +69,18 @@ Ensure `pnpm` is installed (or use `npm` if preferred).
 
 The server starts on port 3000 by default (configurable via `PORT` environment variable).
 
-## What’s Missing to Finalize the Project
+## CLI
 
-While the core functionality is implemented, the following aspects need attention for production readiness:
+The project includes administrative CLI tools for user management and database inspection, located in the `cli/` directory.
 
-- **Security Enhancements**:
-  - Passwords are stored in plain text; implement hashing (e.g., using `bcrypt`).
-  - Use proper environment variables for `JWT_SECRET` without fallbacks.
-  - Add rate limiting and input sanitization to prevent common vulnerabilities.
+### Available Commands
 
-- **Testing**:
-  - No unit tests, integration tests, or end-to-end tests. Add testing framework like Jest or Mocha.
+Run these using `pnpm run <command>`:
 
-- **Documentation**:
-  - API documentation (e.g., OpenAPI/Swagger specs) for easy integration.
-  - Detailed setup instructions, especially for environment configuration.
+- `add-user`: Interactively add a new user account.
+- `db-status`: Display the current status of the database.
+- `delete-user`: Interactively delete a user account.
+- `list-users`: List all registered users.
+- `modify-user-role`: Modify the role of an existing user.
 
-- **Error Handling and Logging**:
-  - Improve error responses and add logging (e.g., using `winston` or `morgan`).
-
-- **Additional Features**:
-  - Endpoints for user management (e.g., change password, delete account).
-  - CORS configuration if serving a frontend.
-  - Database migrations for version control of schema changes.
-  - Pagination for listing datasets if user-owned lists are added.
-
-- **Configuration**:
-  - Add a `.env.example` file to guide environment setup.
-  - Support for production databases (e.g., PostgreSQL instead of SQLite).
-
-- **Deployment**:
-  - Docker setup for containerization.
-  - CI/CD pipeline configuration.
-
-Addressing these will make the project robust and ready for deployment.
+These tools use `inquirer` for interactive prompts and `cli-table3` for formatted output where appropriate.
