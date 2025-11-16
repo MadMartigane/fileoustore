@@ -2,6 +2,9 @@
   "name": "dataset-api",
   "version": "1.0.0",
   "scripts": {
+    "add-user": "ts-node cli/add-user.ts",
+    "list-users": "ts-node cli/list-users.ts",
+    "modify-user-role": "ts-node cli/modify-user-role.ts",
     "start": "ts-node ./src/index.ts",
     "dev": "ts-node-dev --respawn ./src/index.ts",
     "format": "ultracite fix",
@@ -9,6 +12,8 @@
     "doctor": "ultracite doctor"
   },
   "dependencies": {
+    "@types/bcrypt": "^6.0.0",
+    "bcrypt": "^6.0.0",
     "better-sqlite3": "^12.4.1",
     "express": "^5.1.0",
     "jsonwebtoken": "^9.0.2",
@@ -22,6 +27,7 @@
     "@types/jsonwebtoken": "^9.0.5",
     "@types/node": "^24.10.1",
     "dotenv": "^17.2.3",
+    "inquirer": "^12.11.1",
     "ts-node": "^10.9.2",
     "ts-node-dev": "^2.0.0",
     "typescript": "^5.9.3",

@@ -19,6 +19,9 @@ export const create = (req: Request, res: Response) => {
     if (!userId) {
       return res.status(401).json({ error: "User not authenticated" });
     }
+    if (req.user?.role === "guest") {
+      return res.status(403).json({ error: "Guests cannot create datasets" });
+    }
     const dataSet = createNewDataset(
       userId,
       result.data.name,

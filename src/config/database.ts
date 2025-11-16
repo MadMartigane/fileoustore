@@ -12,7 +12,8 @@ db.exec(`
   CREATE TABLE IF NOT EXISTS users (
     id TEXT PRIMARY KEY,
     username TEXT UNIQUE NOT NULL,
-    password TEXT NOT NULL
+    password TEXT NOT NULL,
+    role TEXT NOT NULL DEFAULT 'user'
   );
 
   CREATE TABLE IF NOT EXISTS datasets (
@@ -32,6 +33,12 @@ db.exec(`
     FOREIGN KEY (userId) REFERENCES users(id),
     PRIMARY KEY (datasetId, userId)
   );
-`);
+  `);
+
+try {
+  db.exec(`ALTER TABLE users ADD COLUMN role TEXT DEFAULT 'user';`);
+} catch (_error) {
+  // Column might already exist, ignore
+}
 
 export { db };
