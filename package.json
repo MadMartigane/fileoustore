@@ -12,6 +12,8 @@
     "doctor": "ultracite doctor"
   },
   "dependencies": {
+    "@types/bcrypt": "^6.0.0",
+    "bcrypt": "^6.0.0",
     "better-sqlite3": "^12.4.1",
     "express": "^5.1.0",
     "jsonwebtoken": "^9.0.2",

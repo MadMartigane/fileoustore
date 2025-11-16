@@ -5,8 +5,8 @@ const createUserStmt = db.prepare(
   "INSERT INTO users (id, username, password, role) VALUES (?, ?, ?, ?)"
 );
 
-const getUserByCredentialsStmt = db.prepare(
-  "SELECT * FROM users WHERE username = ? AND password = ?"
+const getUserByUsernameStmt = db.prepare(
+  "SELECT * FROM users WHERE username = ?"
 );
 
 export const createUser = (user: User): void => {
@@ -17,8 +17,5 @@ export const createUser = (user: User): void => {
   }
 };
 
-export const getUserByCredentials = (
-  username: string,
-  password: string
-): User | undefined =>
-  getUserByCredentialsStmt.get(username, password) as User | undefined;
+export const getUserByUsername = (username: string): User | undefined =>
+  getUserByUsernameStmt.get(username) as User | undefined;
