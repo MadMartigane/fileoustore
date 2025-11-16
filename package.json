@@ -3,6 +3,8 @@
   "version": "1.0.0",
   "scripts": {
     "add-user": "ts-node cli/add-user.ts",
+    "db-status": "ts-node cli/db-status.ts",
+    "delete-user": "ts-node cli/delete-user.ts",
     "list-users": "ts-node cli/list-users.ts",
     "modify-user-role": "ts-node cli/modify-user-role.ts",
     "start": "ts-node ./src/index.ts",
@@ -15,8 +17,10 @@
     "@types/bcrypt": "^6.0.0",
     "bcrypt": "^6.0.0",
     "better-sqlite3": "^12.4.1",
+    "cli-table3": "^0.6.5",
     "express": "^5.1.0",
     "jsonwebtoken": "^9.0.2",
+    "picocolors": "^1.1.1",
     "uuid": "^13.0.0",
     "zod": "^4.1.12"
   },
